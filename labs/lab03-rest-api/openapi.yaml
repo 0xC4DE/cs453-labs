@@ -1,11 +1,11 @@
 openapi: 3.0.3
 
 info:
-  title: Example 03 - Express Routes API
+  title: Lab 3 - REST API with Express
   version: 1.0.0
   description: >
-    A small HTTP JSON API used to demonstrate Express routes,
-    JSON request bodies, path parameters, status codes, and simple responses.
+    A small in-memory items API that demonstrates Express routes,
+    JSON request bodies, path parameters, and basic REST-style CRUD operations.
 
 servers:
   - url: http://localhost:3000
@@ -26,108 +26,212 @@ paths:
               example:
                 status: ok
 
-  /hello:
-    get:
-      summary: Hello message
-      description: Returns a simple greeting message from the server.
-      responses:
-        "200":
-          description: Greeting response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HelloResponse"
-              example:
-                message: Hello from Express
-
-  /requests:
-    get:
-      summary: Request count
-      description: Returns the number of requests handled since the server started.
-      responses:
-        "200":
-          description: Request count response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RequestCountResponse"
-              example:
-                count: 3
-
-  /echo:
-    post:
-      summary: Echo JSON body
-      description: Accepts a JSON request body and returns it inside a response object.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-            example:
-              message: hello
-      responses:
-        "200":
-          description: Echo response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/EchoResponse"
-              example:
-                youSent:
-                  message: hello
-        "400":
-          description: Invalid JSON or bad request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error: Invalid JSON
-
   /items:
     get:
       summary: List items
-      description: Returns a small list of example items.
+      description: Returns all in-memory items.
       responses:
         "200":
           description: Item list response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ItemListResponse"
+                $ref: "#/components/schemas/ItemListSuccessResponse"
               example:
+                status: ok
                 items:
                   - id: 1
                     name: keyboard
-                  - id: 2
-                    name: mouse
-                  - id: 3
-                    name: monitor
+                    quantity: 10
+
+    post:
+      summary: Create item
+      description: Creates a new item with a generated ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateItemRequest"
+            example:
+              name: monitor
+              quantity: 4
+      responses:
+        "200":
+          description: Item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemSuccessResponse"
+              example:
+                status: ok
+                item:
+                  id: 1
+                  name: monitor
+                  quantity: 4
+        "400":
+          description: Missing or invalid request fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailureResponse"
+              examples:
+                missingName:
+                  summary: Name missing
+                  value:
+                    status: failure
+                    error: Name must be in body
+                invalidQuantity:
+                  summary: Quantity missing or invalid
+                  value:
+                    status: failure
+                    error: Quantity must be in body and a valid number
 
   /items/{id}:
     get:
       summary: Get item by ID
-      description: Returns one example item using the ID from the path.
+      description: Returns one item by ID.
       parameters:
         - name: id
           in: path
           required: true
           description: The item ID from the URL path.
           schema:
-            type: integer
-            example: 7
+            type: string
+            example: "1"
       responses:
         "200":
-          description: Single item response
+          description: Item found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Item"
+                $ref: "#/components/schemas/ItemSuccessResponse"
               example:
-                id: 7
-                name: Item 7
+                status: ok
+                item:
+                  id: 1
+                  name: keyboard
+                  quantity: 10
+        "400":
+          description: Invalid ID format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailureResponse"
+              example:
+                status: failure
+                error: id was not a number
+        "404":
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailureResponse"
+              example:
+                status: failure
+                error: item not found
+
+    put:
+      summary: Update item by ID
+      description: Updates one or more item fields.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The item ID from the URL path.
+          schema:
+            type: string
+            example: "1"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateItemRequest"
+            example:
+              quantity: 100
+      responses:
+        "200":
+          description: Item updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemSuccessResponse"
+              example:
+                status: ok
+                item:
+                  id: 1
+                  name: keyboard
+                  quantity: 100
+        "400":
+          description: Invalid ID or invalid quantity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailureResponse"
+              examples:
+                invalidId:
+                  summary: Invalid ID
+                  value:
+                    status: failure
+                    error: ID is not valid
+                invalidQuantity:
+                  summary: Invalid quantity
+                  value:
+                    status: failure
+                    error: Quantity is not a number
+        "404":
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailureResponse"
+              example:
+                status: failure
+                error: ID not found
+
+    delete:
+      summary: Delete item by ID
+      description: Deletes one item and returns the deleted object.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The item ID from the URL path.
+          schema:
+            type: string
+            example: "1"
+      responses:
+        "200":
+          description: Item deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemSuccessResponse"
+              example:
+                status: ok
+                item:
+                  id: 1
+                  name: keyboard
+                  quantity: 100
+        "400":
+          description: Invalid ID format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailureResponse"
+              example:
+                status: failure
+                error: ID is not valid
+        "404":
+          description: Item not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailureResponse"
+              example:
+                status: failure
+                error: ID not found
 
 components:
   schemas:
@@ -140,33 +244,6 @@ components:
       required:
         - status
 
-    HelloResponse:
-      type: object
-      properties:
-        message:
-          type: string
-          example: Hello from Express
-      required:
-        - message
-
-    RequestCountResponse:
-      type: object
-      properties:
-        count:
-          type: integer
-          example: 3
-      required:
-        - count
-
-    EchoResponse:
-      type: object
-      properties:
-        youSent:
-          type: object
-          additionalProperties: true
-      required:
-        - youSent
-
     Item:
       type: object
       properties:
@@ -176,19 +253,82 @@ components:
         name:
           type: string
           example: keyboard
+        quantity:
+          type: integer
+          example: 10
       required:
         - id
         - name
+        - quantity
 
-    ItemListResponse:
+    CreateItemRequest:
       type: object
       properties:
+        name:
+          type: string
+          example: monitor
+        quantity:
+          oneOf:
+            - type: integer
+              example: 4
+            - type: string
+              example: "4"
+      required:
+        - name
+        - quantity
+
+    UpdateItemRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: monitor
+        quantity:
+          oneOf:
+            - type: integer
+              example: 100
+            - type: string
+              example: "100"
+      additionalProperties: false
+
+    ItemSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        item:
+          $ref: "#/components/schemas/Item"
+      required:
+        - status
+        - item
+
+    ItemListSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
         items:
           type: array
           items:
             $ref: "#/components/schemas/Item"
       required:
+        - status
         - items
+
+    FailureResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: failure
+        error:
+          type: string
+          example: ID not found
+      required:
+        - status
+        - error
 
     ErrorResponse:
       type: object
