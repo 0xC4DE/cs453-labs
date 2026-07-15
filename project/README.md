@@ -63,3 +63,26 @@ node apps/client/client.js
 | GET | /tasks/:id | Return one task by ID |
 | PATCH | /tasks/:id | Update an existing task |
 | DELETE | /tasks/:id | Delete an existing task |
+
+
+# Reflection Questions
+
+What is the difference between an in-memory API and a database-backed API?
+
+- In-memory will go away if the server ever restarts. Dayata-base backed will never disappear unless deleted. Database also requires drivers to connect to it while in-memory generally doesn't.
+
+Why is it useful to separate routes, services, and database logic?
+
+- Separating routes, services, and database logic just allows you to keep code segmented while maintaining functionality. If one segment of this code fails it becomes much easier to track exactly where it's going wrong, and reduces repeated code in the process.
+
+What HTTP status codes did you use, and why?
+
+- 500 health check failed/internal server error, 400 bad form content (bad request, bad json), 404 item/task not found, 200 regular success, 201 created a task, 204 no content for when a task is deleted. I used all of these as they are the recommended defaults for the type of response that they provide for.
+
+What happens when a client requests a task ID that does not exist?
+
+- They will 404 because the routes check for the item to exist before executing anything.
+
+What was the hardest part of connecting the API to PostgreSQL?
+
+- The queries are the hardest part, as they must be templated as to prevent injection and they must be raw queries. This is generally solved with an ORM library that wraps database operations into programmatic function calls/object manipulations.
