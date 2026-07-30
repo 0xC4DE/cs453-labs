@@ -20,6 +20,8 @@ export function validateCreateTask(req: Request, res: Response, next: NextFuncti
 	const title = req.body?.title;
 	const description = req.body?.description;
 	const status = req.body?.status;
+	const projectId = req.body?.project_id;
+	const assignedTo = req.body?.assigned_to;
 
 	if (typeof title !== "string" || title.trim().length === 0) {
 		return res.status(400).json({ error: "title is required" });
@@ -33,6 +35,14 @@ export function validateCreateTask(req: Request, res: Response, next: NextFuncti
 		return res.status(400).json({ error: "status must be a non-empty string" });
 	}
 
+	if (!Number.isInteger(projectId) || projectId <= 0) {
+		return res.status(400).json({ error: "project_id must be a positive integer" });
+	}
+
+	if (assignedTo !== undefined && assignedTo !== null && (!Number.isInteger(assignedTo) || assignedTo <= 0)) {
+		return res.status(400).json({ error: "assigned_to must be a positive integer or null" });
+	}
+
 	next();
 }
 
@@ -40,6 +50,7 @@ export function validatePatchTask(req: Request, res: Response, next: NextFunctio
 	const title = req.body?.title;
 	const description = req.body?.description;
 	const status = req.body?.status;
+	const assignedTo = req.body?.assigned_to;
 
 	if (title === undefined && description === undefined && status === undefined) {
 		return res.status(400).json({ error: "At least one field is required" });
@@ -55,6 +66,10 @@ export function validatePatchTask(req: Request, res: Response, next: NextFunctio
 
 	if (status !== undefined && (typeof status !== "string" || status.trim().length === 0)) {
 		return res.status(400).json({ error: "status must be a non-empty string" });
+	}
+
+	if (assignedTo !== undefined && assignedTo !== null && (!Number.isInteger(assignedTo) || assignedTo <= 0)) {
+		return res.status(400).json({ error: "assigned_to must be a positive integer or null" });
 	}
 
 	next();

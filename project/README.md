@@ -58,6 +58,8 @@ node apps/client/client.js
 
 | Method | Route | Description |
 | --- | --- | --- |
+| POST | /users/register | Register a new user |
+| POST | /users/login | Log in and receive a JWT |
 | GET | /tasks | Return all tasks |
 | POST | /tasks | Create a new task |
 | GET | /tasks/:id | Return one task by ID |

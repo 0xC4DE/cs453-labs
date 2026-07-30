@@ -1,12 +1,16 @@
 import express from "express";
 import { env } from "./config/env";
 import { pool } from "./db/pool";
+const { projectRoutes } = require("./routes/projectRoutes");
 const { taskRoutes } = require("./routes/taskRoutes");
+const { userRoutes } = require("./routes/userRoutes");
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 
 const app = express();
 
 app.use(express.json());
+app.use("/projects", projectRoutes);
+app.use("/users", userRoutes);
 app.use("/tasks", taskRoutes);
 
 app.get("/health", (_req, res) => {
