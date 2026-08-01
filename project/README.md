@@ -121,3 +121,31 @@ curl -X GET http://localhost:3000/tasks \
 
 # Reflection Questions
 
+1) What is the difference between authentication and authorization?
+
+Authentication means "proving who you say you are" this is proven in an application with a username/password pair. Authorization is more or less the question of "What is this person allowed to access."
+
+2) Why should passwords be hashed instead of stored directly?
+
+Hashes are non-reversible, and storing plaintext passwords can result in leakage of private data (the password)
+
+3) What information did you include in your JWT, and why?
+
+User ID, Email, Role. I included UserID and Role for easy look up against the user without having to make excessive SQL queries. I included email because it was part of the specification.
+
+4) What is the difference between a 401 response and a 403 response?
+
+401 means unauthorized 403 means forbidden. A 401 is used when you dont have the credential inside of the request, or that credential is expired. 403 is used when your credential is valid but you just dont have access to that particular resource.
+
+5) Where does your application perform role or ownership checks?
+
+A combination of queries inside of project & taks services, and also inside of authorization.ts. It is done in the services because it can cut down on server-side filtering for returning several items and inside of the authorization.ts where it is easier to simply apply a top-level filter against a single entry.
+
+6) How are users, projects, and tasks related in your database?
+
+Users exist, projects can have owners which are users, tasks can belong to projects and be assigned to users.
+
+7) What was the hardest part of adding authentication or authorization?
+
+Authorization is a notoriously difficult problem because there are several cases to consider and it can be more difficult to generalize things instead of simply making different handlers for different types.
+
