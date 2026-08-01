@@ -27,6 +27,8 @@ export type UpdateTaskInput = {
     assigned_to?: number | null;
 };
 
+type Role = "user" | "admin";
+
 export async function listTasks() {
 	const result = await pool.query<Task>(
         `SELECT t.id,
@@ -45,6 +47,32 @@ export async function listTasks() {
 	return result.rows;
 }
 
+export async function listTasksForUser(userId: number, role: Role) {
+    if (role === "admin") {
+        return listTasks();
+    }
+
+    const result = await pool.query<Task>(
+        `SELECT t.id,
+                t.title,
+                t.description,
+                t.status,
+                t.project_id,
+                t.assigned_to,
+                p.owner_id AS project_owner_id,
+                t.created_at,
+                t.updated_at
+         FROM tasks t
+         INNER JOIN projects p ON p.id = t.project_id
+         WHERE p.owner_id = $1
+            OR t.assigned_to = $1
+         ORDER BY t.id`,
+        [userId],
+    );
+
+    return result.rows;
+}
+
 export async function getTaskById(id: number) {
     const result = await pool.query<Task>(
         `SELECT t.id,
@@ -60,6 +88,31 @@ export async function getTaskById(id: number) {
          INNER JOIN projects p ON p.id = t.project_id
          WHERE t.id = $1`,
         [id],
+    );
+
+    return result.rows[0] ?? null;
+}
+
+export async function getTaskByIdForUser(id: number, userId: number, role: Role) {
+    if (role === "admin") {
+        return getTaskById(id);
+    }
+
+    const result = await pool.query<Task>(
+        `SELECT t.id,
+                t.title,
+                t.description,
+                t.status,
+                t.project_id,
+                t.assigned_to,
+                p.owner_id AS project_owner_id,
+                t.created_at,
+                t.updated_at
+         FROM tasks t
+         INNER JOIN projects p ON p.id = t.project_id
+         WHERE t.id = $1
+                     AND (p.owner_id = $2 OR t.assigned_to = $2)`,
+        [id, userId],
     );
 
     return result.rows[0] ?? null;

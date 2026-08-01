@@ -35,17 +35,30 @@ npm install
 ```shell
 psql postgresql://postgres:postgres@localhost:5432/cs453 -f database/schema.sql
 ```
-Any settings for database authentication is controlled by the `docker-compose.yml`. The environment sections control the
-Optionally a .env file inside of `project` can be created with `DATABASE_URL` set to a different credential.
+Any settings for database authentication can be controlled by the `docker-compose.yml`.
+A .env file (specified below) inside of `project` can be created with `DATABASE_URL` set to a different credential
+it's also important to set `JWT_SECRET` inside of the docker-compose
 
----
+## 5. .env setup and running the server
 
-## 5. Run the server
+Optionally, Create a `.env` file in `project/` using the example file:
+
+```shell
+cp .env.example .env
+```
+
+```
+
+Start the server from the project root:
+
 ```shell
 npm run dev
 ```
 
+On startup, default users are created if missing and `admin@example.com` is promoted to role `admin`.
+
 The API server should start locally.
+NOTE: an administrator and "user1" account will be created upon server startup.
 
 ## 6. Running tests
 ```shell
@@ -54,37 +67,57 @@ node apps/client/client.js
 
 ---
 
+## 7. Registration API & Login API
+```shell
+curl -X POST http://localhost:3000/auth/register \
+	-H "Content-Type: application/json" \
+	-d '{
+		"name": "user2",
+		"email": "user2@example.com",
+		"password": "password"
+	}'
+
+curl -X POST http://localhost:3000/auth/login \
+	-H "Content-Type: application/json" \
+	-d '{
+		"email": "user2@example.com",
+		"password": "password"
+	}'
+```
+
+---
+
+## 8. How to use your token
+Include the "Authorization: Bearer {token}" header in your request
+
+ex: 
+```shell
+curl -X GET http://localhost:3000/tasks \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer {TOKEN}"
+```
+
+
 # Routes
 
-| Method | Route | Description |
-| --- | --- | --- |
-| POST | /users/register | Register a new user |
-| POST | /users/login | Log in and receive a JWT |
-| GET | /tasks | Return all tasks |
-| POST | /tasks | Create a new task |
-| GET | /tasks/:id | Return one task by ID |
-| PATCH | /tasks/:id | Update an existing task |
-| DELETE | /tasks/:id | Delete an existing task |
-
+| Method | Route | Protected | Who can access |
+| --- | --- | --- | --- |
+| GET | /health | No | Public health check |
+| GET | /db-health | No | Public DB connectivity check |
+| POST | /auth/register | No | Public registration |
+| POST | /auth/login | No | Public login |
+| GET | /auth/me | Yes | Any authenticated user |
+| GET | /projects | Yes | Admin sees all; user sees owned projects |
+| POST | /projects | Yes | Any authenticated user can create |
+| GET | /projects/:id | Yes | Admin any project; user only owned project |
+| PATCH | /projects/:id | Yes | Admin any project; user only owned project |
+| DELETE | /projects/:id | Yes | Admin any project; user only owned project |
+| GET | /projects/admin/all | Yes | Admin only |
+| GET | /tasks | Yes | Admin sees all; user sees assigned tasks or tasks in owned projects |
+| POST | /tasks | Yes | Admin any project; user only in owned projects |
+| GET | /tasks/:id | Yes | Admin any task; user only assigned task or task in owned project |
+| PATCH | /tasks/:id | Yes | Admin any task; user only assigned task or task in owned project |
+| DELETE | /tasks/:id | Yes | Admin any task; user only assigned task or task in owned project |
 
 # Reflection Questions
 
-What is the difference between an in-memory API and a database-backed API?
-
-- In-memory will go away if the server ever restarts. Dayata-base backed will never disappear unless deleted. Database also requires drivers to connect to it while in-memory generally doesn't.
-
-Why is it useful to separate routes, services, and database logic?
-
-- Separating routes, services, and database logic just allows you to keep code segmented while maintaining functionality. If one segment of this code fails it becomes much easier to track exactly where it's going wrong, and reduces repeated code in the process.
-
-What HTTP status codes did you use, and why?
-
-- 500 health check failed/internal server error, 400 bad form content (bad request, bad json), 404 item/task not found, 200 regular success, 201 created a task, 204 no content for when a task is deleted. I used all of these as they are the recommended defaults for the type of response that they provide for.
-
-What happens when a client requests a task ID that does not exist?
-
-- They will 404 because the routes check for the item to exist before executing anything.
-
-What was the hardest part of connecting the API to PostgreSQL?
-
-- The queries are the hardest part, as they must be templated as to prevent injection and they must be raw queries. This is generally solved with an ORM library that wraps database operations into programmatic function calls/object manipulations.

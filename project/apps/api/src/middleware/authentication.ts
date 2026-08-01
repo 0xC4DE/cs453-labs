@@ -25,8 +25,7 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
 
 	if (!authorization?.startsWith("Bearer ")) {
 		return res.status(401).json({
-			error: "Unauthorized",
-			message: "Bearer token not included with request.",
+			error: "Authentication required",
 		});
 	}
 
@@ -37,8 +36,7 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
 		next();
 	} catch {
 		return res.status(401).json({
-			error: "Unauthorized",
-			message: "The access token is missing, invalid, or expired.",
+			error: "Authentication required",
 		});
 	}
 }

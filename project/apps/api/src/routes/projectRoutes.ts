@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticateToken } from "../middleware/authentication";
+import { authenticateToken, AuthenticatedUser } from "../middleware/authentication";
 import { requireProjectOwnerOrAdmin, requireRole } from "../middleware/authorization";
 import {
 	validateCreateProject,
@@ -9,16 +9,20 @@ import {
 import {
 	createProject,
 	deleteProjectById,
-	getProjectById,
+	getProjectByIdForUser,
 	listProjects,
+	listProjectsForUser,
 	updateProjectById,
 } from "../services/projectService";
 
 export const projectRoutes = Router();
 
-projectRoutes.get("/", async (_req, res, next) => {
+projectRoutes.get("/", authenticateToken, async (req, res, next) => {
+	const user = req.user as AuthenticatedUser;
+	const userId = Number(user.sub);
+
 	try {
-		const projects = await listProjects();
+		const projects = await listProjectsForUser(userId, user.role);
 		res.json(projects);
 	} catch (error) {
 		next(error);
@@ -38,11 +42,13 @@ projectRoutes.post("/", authenticateToken, validateCreateProject, async (req, re
 	}
 });
 
-projectRoutes.get("/:id", validateProjectId, async (req, res, next) => {
+projectRoutes.get("/:id", authenticateToken, validateProjectId, async (req, res, next) => {
 	const id = Number(req.params.id);
+	const user = req.user as AuthenticatedUser;
+	const userId = Number(user.sub);
 
 	try {
-		const project = await getProjectById(id);
+		const project = await getProjectByIdForUser(id, userId, user.role);
 		if (!project) {
 			return res.status(404).json({
 				error: "Project not found",

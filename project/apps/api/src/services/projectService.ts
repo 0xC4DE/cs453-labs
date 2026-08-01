@@ -19,6 +19,8 @@ export type UpdateProjectInput = {
 	description?: string | null;
 };
 
+type Role = "user" | "admin";
+
 export async function listProjects() {
 	const result = await pool.query<Project>(
 		`SELECT id,
@@ -28,6 +30,26 @@ export async function listProjects() {
 		        created_at
 		 FROM projects
 		 ORDER BY id`,
+	);
+
+	return result.rows;
+}
+
+export async function listProjectsForUser(userId: number, role: Role) {
+	if (role === "admin") {
+		return listProjects();
+	}
+
+	const result = await pool.query<Project>(
+		`SELECT id,
+		        name,
+		        description,
+		        owner_id,
+		        created_at
+		 FROM projects
+		 WHERE owner_id = $1
+		 ORDER BY id`,
+		[userId],
 	);
 
 	return result.rows;
@@ -43,6 +65,26 @@ export async function getProjectById(id: number) {
 		 FROM projects
 		 WHERE id = $1`,
 		[id],
+	);
+
+	return result.rows[0] ?? null;
+}
+
+export async function getProjectByIdForUser(id: number, userId: number, role: Role) {
+	if (role === "admin") {
+		return getProjectById(id);
+	}
+
+	const result = await pool.query<Project>(
+		`SELECT id,
+		        name,
+		        description,
+		        owner_id,
+		        created_at
+		 FROM projects
+		 WHERE id = $1
+		   AND owner_id = $2`,
+		[id, userId],
 	);
 
 	return result.rows[0] ?? null;

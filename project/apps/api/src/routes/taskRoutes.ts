@@ -12,16 +12,19 @@ import {
 import {
 	createTask,
 	deleteTaskById,
-	getTaskById,
-	listTasks,
+	getTaskByIdForUser,
+	listTasksForUser,
 	updateTaskById,
 } from "../services/taskService";
 
 export const taskRoutes = Router();
 
-taskRoutes.get("/", async (_req, res, next) => {
+taskRoutes.get("/", authenticateToken, async (req, res, next) => {
+	const user = req.user as AuthenticatedUser;
+	const userId = Number(user.sub);
+
 	try {
-		const tasks = await listTasks();
+		const tasks = await listTasksForUser(userId, user.role);
 		res.json(tasks);
 	} catch (error) {
 		next(error);
@@ -60,9 +63,7 @@ taskRoutes.post(
 			return res.status(400).json({
 				error: "Invalid relation",
 				message:
-					user.role === "admin"
-						? "project_id or assigned_to does not reference an existing record."
-						: "assigned_to must reference an existing user.",
+					"project_id or assigned_to does not reference an existing record."
 			});
 		}
 
@@ -71,11 +72,13 @@ taskRoutes.post(
 },
 );
 
-taskRoutes.get("/:id", validateTaskId, async (req, res, next) => {
+taskRoutes.get("/:id", authenticateToken, validateTaskId, async (req, res, next) => {
 	const id = Number(req.params.id);
+	const user = req.user as AuthenticatedUser;
+	const userId = Number(user.sub);
 
 	try {
-		const task = await getTaskById(id);
+		const task = await getTaskByIdForUser(id, userId, user.role);
 		if (!task) {
 			return res.status(404).json({
 				error: "Task not found",
