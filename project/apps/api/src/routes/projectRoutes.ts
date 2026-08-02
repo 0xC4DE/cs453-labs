@@ -42,6 +42,16 @@ projectRoutes.post("/", authenticateToken, validateCreateProject, async (req, re
 	}
 });
 
+// This is the singular route that requires admin to be able to operate
+projectRoutes.get("/admin/all", authenticateToken, requireRole("admin"), async (_req, res, next) => {
+	try {
+		const projects = await listProjects();
+		res.json(projects);
+	} catch (error) {
+		next(error);
+	}
+});
+
 projectRoutes.get("/:id", authenticateToken, validateProjectId, async (req, res, next) => {
 	const id = Number(req.params.id);
 	const user = req.user as AuthenticatedUser;
@@ -109,14 +119,4 @@ projectRoutes.delete(
 		}
 	},
 );
-
-// This is the singular route that requires admin to be able to operate
-projectRoutes.get("/admin/all", authenticateToken, requireRole("admin"), async (_req, res, next) => {
-	try {
-		const projects = await listProjects();
-		res.json(projects);
-	} catch (error) {
-		next(error);
-	}
-});
 
