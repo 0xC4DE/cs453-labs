@@ -1,0 +1,326 @@
+openapi: 3.0.3
+info:
+  title: Course Task Tracker API
+  version: 1.0.0
+  description: API for managing tasks and report jobs for students and instructors.
+servers:
+  - url: http://localhost:3000
+paths:
+  /tasks:
+    get:
+      summary: List tasks for the authenticated user
+      description: Must be authenticated student or instructor.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  tasks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        course:
+                          type: string
+                        studentId:
+                          type: string
+                        completed:
+                          type: boolean
+                      required:
+                        - id
+                        - title
+                        - course
+                        - studentId
+                        - completed
+        '403':
+          description: Forbidden
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create a new task
+      description: Must be authenticated student or instructor.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                course:
+                  type: string
+                completed:
+                  type: boolean
+              required:
+                - title
+                - course
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Invalid request
+        '403':
+          description: Forbidden
+        '401':
+          description: Unauthorized
+
+  /tasks/{id}:
+    get:
+      summary: Get a task by ID
+      description: A student can only view their own task, instructors can view any student task.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '200':
+          description: Task found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    $ref: '#/components/schemas/Task'
+        '403':
+          description: Forbidden for another student's task
+        '401':
+          description: Unauthorized
+        '404':
+          description: Task not found
+    put:
+      summary: Replace a task by ID
+      description: A student can only update their own task, instructors can update any student task.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                course:
+                  type: string
+                completed:
+                  type: boolean
+              required:
+                - title
+                - course
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  course:
+                    type: string
+                  studentId:
+                    type: string
+                  completed:
+                    type: boolean
+                required:
+                  - id
+                  - title
+                  - course
+                  - studentId
+                  - completed
+        '403':
+          description: Forbidden
+        '401':
+          description: Unauthorized
+        '404':
+          description: Task not found
+
+    patch:
+      summary: Update part of a task
+      description: A student can only update their own task, instructors can update any student task.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                course:
+                  type: string
+                completed:
+                  type: boolean
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '403':
+          description: Forbidden
+        '401':
+          description: Unauthorized
+        '404':
+          description: Task not found
+    delete:
+      summary: Delete a task by ID
+      description: Only instructors may delete tasks
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '204':
+          description: Task deleted
+        '403':
+          description: Forbidden
+        '401':
+          description: Unauthorized
+        '404':
+          description: Task not found
+
+  /reports:
+    post:
+      summary: Request a new report
+      description: Must be authenticated student or instructor, instructors can request reports for any student, students only themselves.
+      security:
+        - bearerAuth: []
+      responses:
+        '202':
+          description: Report job accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  studentId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [pending, running, completed, failed]
+                  downloadUrl:
+                    type: string
+                    nullable: true
+                required:
+                  - id
+                  - studentId
+                  - status
+        '403':
+          description: Forbidden
+        '401':
+          description: Unauthorized
+
+  /reports/{id}:
+    get:
+      summary: Get the status of a report job
+      description: Accessible to students and instructors, no restrictions on ownership.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ReportId'
+      responses:
+        '200':
+          description: Report status returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  studentId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [pending, running, completed, failed]
+                  downloadUrl:
+                    type: string
+                    nullable: true
+                required:
+                  - id
+                  - studentId
+                  - status
+        '403':
+          description: Forbidden
+        '401':
+          description: Unauthorized
+        '404':
+          description: Report not found
+
+components:
+  schemas:
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        course:
+          type: string
+        studentId:
+          type: string
+        completed:
+          type: boolean
+      required:
+        - id
+        - title
+        - course
+        - studentId
+        - completed
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    TaskId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Task identifier
+    ReportId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Report job identifier
+
