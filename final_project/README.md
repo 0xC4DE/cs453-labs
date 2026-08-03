@@ -38,7 +38,6 @@ For example, a request can be sent with `curl -H "Authorization: Bearer <token>"
 - `COMPLETED (PART 4)`: implement the parameterized task lookup, 404 behavior, instructor access, and student ownership check.
 - `COMPLETED (PART 5)`: create and enqueue report jobs, return `202 Accepted`, and complete the worker status workflow.
 
-
 ## Notes
 
 The in-process queue is a small educational stand-in for RabbitMQ, Redis/BullMQ, SQS, or Kafka. It is FIFO within this process but not durable; messages disappear if the process stops.
